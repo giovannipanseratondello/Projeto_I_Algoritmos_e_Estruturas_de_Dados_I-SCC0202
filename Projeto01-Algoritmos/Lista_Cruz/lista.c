@@ -3,235 +3,143 @@
 #include <string.h>
 #include "lista_cruz.h"
 
-typedef struct no_cruz NO_CRUZ;
-typedef struct cabeca_eixo CABECA_EIXO;
+typedef struct no_cruz {
+    ITEM *item;
+    char *chave_dim1;
+    char *chave_dim2;
+    struct no_cruz *prox_dim1;
+    struct no_cruz *prox_dim2;
+} NO_CRUZ;
 
-/* Nó de dados da lista cruzada */
-struct no_cruz {
-    ITEM *item;                     // Elemento armazenado (compartilhado)
-    char chave_linha[64];           // Identificador do eixo horizontal (ex: "CRITICAL")
-    char chave_coluna[64];          // Identificador do eixo vertical (ex: "2024")
-    
-    NO_CRUZ *prox_linha;            // Ponteiro para o próximo nó na mesma linha
-    NO_CRUZ *prox_coluna;           // Ponteiro para o próximo nó na mesma coluna
-};
-
-/* Cabeça de lista para gerenciar o início de cada Linha/Coluna */
-struct cabeca_eixo {
-    char chave[64];
+typedef struct cabecalho_dim {
+    char *nome_categoria;
     NO_CRUZ *primeiro;
-    CABECA_EIXO *proximo;
-};
+    struct cabecalho_dim *prox;
+} CABECALHO_DIM;
 
-/* Estrutura principal da Lista Cruzada */
 struct lista_cruz {
-    CABECA_EIXO *linhas;           // Cabeça da lista de linhas
-    CABECA_EIXO *colunas;          // Cabeça da lista de colunas
-    NO_CRUZ *lista_linear;         // Encadeamento sequencial simples (para carga via leitor)
-    int tamanho;
+    NO_CRUZ *todos_os_nos;
+    CABECALHO_DIM *cabecas_dim1;
+    CABECALHO_DIM *cabecas_dim2;
+    int total_itens;
 };
-
-/* Helper privado para alocar o nó cruzado */
-static NO_CRUZ *no_cruz_criar(ITEM *item, const char *linha, const char *coluna) {
-    NO_CRUZ *novo = (NO_CRUZ *) malloc(sizeof(NO_CRUZ));
-    if (novo != NULL) {
-        novo->item = item;
-        
-        if (linha != NULL) {
-            strncpy(novo->chave_linha, linha, sizeof(novo->chave_linha) - 1);
-            novo->chave_linha[sizeof(novo->chave_linha) - 1] = '\0';
-        } else {
-            novo->chave_linha[0] = '\0';
-        }
-
-        if (coluna != NULL) {
-            strncpy(novo->chave_coluna, coluna, sizeof(novo->chave_coluna) - 1);
-            novo->chave_coluna[sizeof(novo->chave_coluna) - 1] = '\0';
-        } else {
-            novo->chave_coluna[0] = '\0';
-        }
-
-        novo->prox_linha = NULL;
-        novo->prox_coluna = NULL;
-    }
-    return novo;
-}
-
-/* Helper para buscar ou criar uma cabeça de eixo (linha ou coluna) */
-static CABECA_EIXO *obter_ou_criar_eixo(CABECA_EIXO **lista_eixo, const char *chave) {
-    CABECA_EIXO *atual = *lista_eixo;
-    CABECA_EIXO *anterior = NULL;
-
-    while (atual != NULL) {
-        if (strcmp(atual->chave, chave) == 0) {
-            return atual;
-        }
-        anterior = atual;
-        atual = atual->proximo;
-    }
-
-    CABECA_EIXO *novo = (CABECA_EIXO *) malloc(sizeof(CABECA_EIXO));
-    if (novo == NULL) return NULL;
-
-    strncpy(novo->chave, chave, sizeof(novo->chave) - 1);
-    novo->chave[sizeof(novo->chave) - 1] = '\0';
-    novo->primeiro = NULL;
-    novo->proximo = NULL;
-
-    if (anterior == NULL) {
-        *lista_eixo = novo;
-    } else {
-        anterior->proximo = novo;
-    }
-
-    return novo;
-}
 
 LISTA_CRUZ *lista_cruz_criar(void) {
-    LISTA_CRUZ *lista = (LISTA_CRUZ *) malloc(sizeof(LISTA_CRUZ));
-    if (lista == NULL) return NULL;
-
-    lista->linhas = NULL;
-    lista->colunas = NULL;
-    lista->lista_linear = NULL;
-    lista->tamanho = 0;
-
-    return lista;
+    LISTA_CRUZ *lc = malloc(sizeof(LISTA_CRUZ));
+    if (lc != NULL) {
+        lc->todos_os_nos = NULL;
+        lc->cabecas_dim1 = NULL;
+        lc->cabecas_dim2 = NULL;
+        lc->total_itens = 0;
+    }
+    return lc;
 }
 
-void lista_cruz_apagar(LISTA_CRUZ **lista) {
-    if (lista == NULL || *lista == NULL) return;
+bool lista_vazia(LISTA_CRUZ *lista){
+    if(lista == NULL || lista->total_itens == 0) return true;
+    return false;
+}
 
-    // Libera todos os nós e itens através da lista sequencial/linear
-    NO_CRUZ *atual = (*lista)->lista_linear;
+void lista_cruz_apagar(LISTA_CRUZ **lc) {
+    if (lc == NULL || *lc == NULL) return;
+
+    NO_CRUZ *atual = (*lc)->todos_os_nos;
     while (atual != NULL) {
-        NO_CRUZ *temp = atual;
-        atual = atual->prox_linha; // Usa o ponteiro linear para avançar
+        NO_CRUZ *prox = atual->prox_dim1;
+        free(atual->chave_dim1);
+        free(atual->chave_dim2);
+        free(atual);
+        atual = prox;
+    }
 
-        if (temp->item != NULL) {
-            item_destruir(&(temp->item));
+    CABECALHO_DIM *c1 = (*lc)->cabecas_dim1;
+    while (c1 != NULL) {
+        CABECALHO_DIM *prox = c1->prox;
+        free(c1->nome_categoria);
+        free(c1);
+        c1 = prox;
+    }
+
+    CABECALHO_DIM *c2 = (*lc)->cabecas_dim2;
+    while (c2 != NULL) {
+        CABECALHO_DIM *prox = c2->prox;
+        free(c2->nome_categoria);
+        free(c2);
+        c2 = prox;
+    }
+
+    free(*lc);
+    *lc = NULL;
+}
+
+static CABECALHO_DIM *obter_ou_criar_cabecalho(CABECALHO_DIM **cabeca_lista, const char *nome) {
+    CABECALHO_DIM *atual = *cabeca_lista;
+    while (atual != NULL) {
+        if (strcmp(atual->nome_categoria, nome) == 0) {
+            return atual;
         }
-        free(temp);
+        atual = atual->prox;
     }
 
-    // Libera os cabeçalhos de linhas
-    CABECA_EIXO *eixo_lin = (*lista)->linhas;
-    while (eixo_lin != NULL) {
-        CABECA_EIXO *temp = eixo_lin;
-        eixo_lin = eixo_lin->proximo;
-        free(temp);
-    }
-
-    // Libera os cabeçalhos de colunas
-    CABECA_EIXO *eixo_col = (*lista)->colunas;
-    while (eixo_col != NULL) {
-        CABECA_EIXO *temp = eixo_col;
-        eixo_col = eixo_col->proximo;
-        free(temp);
-    }
-
-    free(*lista);
-    *lista = NULL;
+    CABECALHO_DIM *novo = malloc(sizeof(CABECALHO_DIM));
+    if (novo == NULL) return NULL;
+    novo->nome_categoria = strdup(nome);
+    novo->primeiro = NULL;
+    novo->prox = *cabeca_lista;
+    *cabeca_lista = novo;
+    return novo;
 }
 
-bool lista_cruz_vazia(LISTA_CRUZ *lista) {
-    if (lista == NULL) return true;
-    return (lista->tamanho == 0);
-}
+bool lista_cruz_inserir(LISTA_CRUZ *lc, ITEM *item, char *chave1, char *chave2) {
+    if (lc == NULL || item == NULL || chave1 == NULL || chave2 == NULL) return false;
 
-int lista_cruz_tamanho(LISTA_CRUZ *lista) {
-    if (lista == NULL) return 0;
-    return lista->tamanho;
-}
-
-/* Inserção Sequencial Simples (Atende à chamada genérica do ler_arquivo) */
-bool lista_cruz_inserir(LISTA_CRUZ *lista, ITEM *item) {
-    if (lista == NULL || item == NULL) return false;
-
-    NO_CRUZ *novo = no_cruz_criar(item, "GERAL", "GERAL");
+    NO_CRUZ *novo = malloc(sizeof(NO_CRUZ));
     if (novo == NULL) return false;
 
-    if (lista->lista_linear == NULL) {
-        lista->lista_linear = novo;
-    } else {
-        NO_CRUZ *atual = lista->lista_linear;
-        while (atual->prox_linha != NULL) {
-            atual = atual->prox_linha;
-        }
-        atual->prox_linha = novo;
-    }
+    novo->item = item;
+    novo->chave_dim1 = strdup(chave1);
+    novo->chave_dim2 = strdup(chave2);
 
-    lista->tamanho++;
-    return true;
-}
+    novo->prox_dim1 = lc->todos_os_nos;
+    lc->todos_os_nos = novo;
 
-/* Inserção Cruzada por Eixos/Atributos (Para operações de CROSS) */
-bool lista_cruz_inserir_cruzado(LISTA_CRUZ *lista, const char *chave_linha, const char *chave_coluna, ITEM *item) {
-    if (lista == NULL || chave_linha == NULL || chave_coluna == NULL || item == NULL) {
-        return false;
-    }
-
-    NO_CRUZ *novo = no_cruz_criar(item, chave_linha, chave_coluna);
-    if (novo == NULL) return false;
-
-    // 1. Obter/Criar os eixos correspondentes
-    CABECA_EIXO *eixo_lin = obter_ou_criar_eixo(&(lista->linhas), chave_linha);
-    CABECA_EIXO *eixo_col = obter_ou_criar_eixo(&(lista->colunas), chave_coluna);
-
-    if (eixo_lin == NULL || eixo_col == NULL) {
+    CABECALHO_DIM *cab1 = obter_ou_criar_cabecalho(&(lc->cabecas_dim1), chave1);
+    if (cab1 == NULL) {
+        free(novo->chave_dim1);
+        free(novo->chave_dim2);
         free(novo);
         return false;
     }
+    novo->prox_dim1 = cab1->primeiro;
+    cab1->primeiro = novo;
 
-    // 2. Encadear na Linha (Eixo Horizontal)
-    if (eixo_lin->primeiro == NULL) {
-        eixo_lin->primeiro = novo;
-    } else {
-        NO_CRUZ *p = eixo_lin->primeiro;
-        while (p->prox_linha != NULL) {
-            p = p->prox_linha;
-        }
-        p->prox_linha = novo;
+    CABECALHO_DIM *cab2 = obter_ou_criar_cabecalho(&(lc->cabecas_dim2), chave2);
+    if (cab2 == NULL) {
+        free(novo->chave_dim1);
+        free(novo->chave_dim2);
+        free(novo);
+        return false;
     }
+    novo->prox_dim2 = cab2->primeiro;
+    cab2->primeiro = novo;
 
-    // 3. Encadear na Coluna (Eixo Vertical)
-    if (eixo_col->primeiro == NULL) {
-        eixo_col->primeiro = novo;
-    } else {
-        NO_CRUZ *p = eixo_col->primeiro;
-        while (p->prox_coluna != NULL) {
-            p = p->prox_coluna;
-        }
-        p->prox_coluna = novo;
-    }
-
-    // 4. Manter na lista linear para controle e destruição segura
-    if (lista->lista_linear == NULL) {
-        lista->lista_linear = novo;
-    } else {
-        NO_CRUZ *p = lista->lista_linear;
-        while (p->prox_linha != NULL) {
-            p = p->prox_linha;
-        }
-        p->prox_linha = novo;
-    }
-
-    lista->tamanho++;
+    lc->total_itens++;
     return true;
 }
 
-void lista_cruz_imprimir(LISTA_CRUZ *lista) {
-    if (lista_cruz_vazia(lista)) return;
-
-    printf("=== VISUALIZAÇÃO POR LINHAS ===\n");
-    CABECA_EIXO *lin = lista->linhas;
-    while (lin != NULL) {
-        printf("Linha [%s]:\n", lin->chave);
-        NO_CRUZ *curr = lin->primeiro;
-        while (curr != NULL) {
-            printf("  -> Coluna [%s] | ITEM\n", curr->chave_coluna);
-            curr = curr->prox_linha;
-        }
-        lin = lin->proximo;
+void lista_cruz_buscar(LISTA_CRUZ *l, void (*processar)(ITEM *item, void *), void *contexto){
+    if (l == NULL || lista_vazia(l) || processar == NULL) {
+        return;
     }
+
+    CABECALHO_DIM *cab;
+    NO_CRUZ *aux;
+    
+    for(cab = l->cabecas_dim1; cab != NULL; cab = cab->prox){
+        for(aux = cab->primeiro; aux != NULL; aux = aux->prox_dim1){
+            processar(aux->item, contexto);
+        }
+    }
+
+
 }

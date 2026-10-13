@@ -26,8 +26,8 @@ static NO *no_criar(ITEM *item) {
     return novo;
 }
 
-LISTA *lista_criar(void) {
-    LISTA *lista = (LISTA *) malloc(sizeof(LISTA));
+LISTA_CABECA *lista_cabeca_criar(void) {
+    LISTA_CABECA *lista = (LISTA_CABECA *) malloc(sizeof(LISTA_CABECA));
     if (lista == NULL) return NULL;
 
     // Aloca o nó cabeça/sentinela real exigido pelo projeto
@@ -47,7 +47,7 @@ LISTA *lista_criar(void) {
     return lista;
 }
 
-void lista_apagar(LISTA **lista) {
+void lista_cabeca_apagar(LISTA_CABECA **lista) {
     if (lista == NULL || *lista == NULL) return;
 
     NO *atual = (*lista)->cabeca->proximo;
@@ -56,7 +56,7 @@ void lista_apagar(LISTA **lista) {
         atual = atual->proximo;
         
         if (temp->item != NULL) {
-            item_destruir(&(temp->item));
+            item_apagar(&(temp->item));
         }
         free(temp);
     }
@@ -67,34 +67,17 @@ void lista_apagar(LISTA **lista) {
     *lista = NULL;
 }
 
-bool lista_vazia(LISTA *lista) {
+bool lista_vazia(LISTA_CABECA *lista) {
     if (lista == NULL || lista->cabeca == NULL) return true;
     return (lista->tamanho == 0);
 }
 
-int lista_tamanho(LISTA *lista) {
+int lista_tamanho(LISTA_CABECA *lista) {
     if (lista == NULL) return 0;
     return lista->tamanho;
 }
 
-bool lista_inserir_fim(LISTA *lista, ITEM *item) {
-    if (lista == NULL || item == NULL) return false;
-
-    NO *novo = no_criar(item);
-    if (novo == NULL) return false;
-
-    NO *ultimo = lista->cabeca->anterior;
-
-    novo->proximo = lista->cabeca;
-    novo->anterior = ultimo;
-    ultimo->proximo = novo;
-    lista->cabeca->anterior = novo;
-
-    lista->tamanho++;
-    return true;
-}
-
-bool lista_inserir_inicio(LISTA *lista, ITEM *item) {
+bool lista_cabeca_inserir_inicio(LISTA_CABECA *lista, ITEM *item) {
     if (lista == NULL || item == NULL) return false;
 
     NO *novo = no_criar(item);
@@ -111,104 +94,17 @@ bool lista_inserir_inicio(LISTA *lista, ITEM *item) {
     return true;
 }
 
-bool lista_inserir(LISTA *lista, ITEM *item, int posicao) {
-    if (lista == NULL || item == NULL || posicao < 0 || posicao > lista->tamanho) {
-        return false;
+void lista_cabeca_buscar(LISTA *l, void (*processar)(ITEM *item, void *), void *contexto){
+    if (l == NULL || lista_vazia(l) || processar == NULL) {
+        return;
     }
 
-    if (posicao == 0) return lista_inserir_inicio(lista, item);
-    if (posicao == lista->tamanho) return lista_inserir_fim(lista, item);
-
-    NO *atual = lista->cabeca->proximo;
-    for (int i = 0; i < posicao; i++) {
-        atual = atual->proximo;
+    NO *aux = l->cabeca->proximo;
+    while (aux != l->cabeca) {
+        
+        
+        processar(aux->item, contexto);
+        
+        aux = aux->proximo;
     }
-
-    NO *novo = no_criar(item);
-    if (novo == NULL) return false;
-
-    novo->proximo = atual;
-    novo->anterior = atual->anterior;
-    atual->anterior->proximo = novo;
-    atual->anterior = novo;
-
-    lista->tamanho++;
-    return true;
 }
-
-ITEM *lista_remover_inicio(LISTA *lista) {
-    if (lista_vazia(lista)) return NULL;
-
-    NO *remover = lista->cabeca->proximo;
-    ITEM *item = remover->item;
-
-    lista->cabeca->proximo = remover->proximo;
-    remover->proximo->anterior = lista->cabeca;
-
-    free(remover);
-    lista->tamanho--;
-
-    return item;
-}
-
-ITEM *lista_remover_fim(LISTA *lista) {
-    if (lista_vazia(lista)) return NULL;
-
-    NO *remover = lista->cabeca->anterior;
-    ITEM *item = remover->item;
-
-    remover->anterior->proximo = lista->cabeca;
-    lista->cabeca->anterior = remover->anterior;
-
-    free(remover);
-    lista->tamanho--;
-
-    return item;
-}
-
-ITEM *lista_remover(LISTA *lista, int posicao) {
-    if (lista_vazia(lista) || posicao < 0 || posicao >= lista->tamanho) {
-        return NULL;
-    }
-
-    if (posicao == 0) return lista_remover_inicio(lista);
-    if (posicao == lista->tamanho - 1) return lista_remover_fim(lista);
-
-    NO *remover = lista->cabeca->proximo;
-    for (int i = 0; i < posicao; i++) {
-        remover = remover->proximo;
-    }
-
-    ITEM *item = remover->item;
-    remover->anterior->proximo = remover->proximo;
-    remover->proximo->anterior = remover->anterior;
-
-    free(remover);
-    lista->tamanho--;
-
-    return item;
-}
-
-ITEM *lista_primeiro(LISTA *lista) {
-    if (lista_vazia(lista)) return NULL;
-    return lista->cabeca->proximo->item;
-}
-
-ITEM *lista_ultimo(LISTA *lista) {
-    if (lista_vazia(lista)) return NULL;
-    return lista->cabeca->anterior->item;
-}
-
-ITEM *lista_obter(LISTA *lista, int posicao) {
-    if (lista_vazia(lista) || posicao < 0 || posicao >= lista->tamanho) {
-        return NULL;
-    }
-
-    NO *atual = lista->cabeca->proximo;
-    for (int i = 0; i < posicao; i++) {
-        atual = atual->proximo;
-    }
-
-    return atual->item;
-}
-

@@ -15,130 +15,61 @@ struct lista
     bool ordered;
 };
 
+bool lista_vazia(LISTA_ORD *lista){
+    if(lista == NULL || lista->size == 0) return true;
+    return false;
+}
 
+int lista_tamanho(LISTA_ORD *lista){
+    if(lista == NULL) return -1;
+    return lista->size;
+}
 
-/* ============================================================
-   OPERAÇÕES BÁSICAS
-   ============================================================ */
-
-LISTA *lista_criar(bool ordenada){
-    LISTA *l = malloc(sizeof(LISTA));
+LISTA_ORD *lista_ord_criar(){
+    LISTA_ORD *l = malloc(sizeof(LISTA_ORD));
     if(l == NULL) return NULL;
 
     l->begin = NULL;
     l->end = NULL;
     l->size = 0;
-    l->ordered = ordenada;
     return l;
 }
 
-void lista_apagar(LISTA **lista){
-    if(lista == NULL || *lista == NULL) return;
+bool lista_ord_inserir(LISTA_ORD *l, ITEM *item, char *campo) {
+    if (l == NULL || item == NULL) return false;
 
-    ITEM *item;
-    while(!lista_vazia(*lista)){
-        item = lista_remover_inicio(*lista);
-        item_apagar(&item);
-    }
-    free(*lista);
-    *lista = NULL;
-    return;
-}
-
-static bool lista_inserir_ordenada(LISTA *l, ITEM *item){
     NO *new = malloc(sizeof(NO));
-    if(new == NULL) return false;
+    if (new == NULL) return false;
     new->item = item;
+    new->next = NULL;
 
     NO *aux = l->begin, *prior = NULL; 
-    while(aux != NULL && item_get_chave(aux->item) < item_get_chave(new->item)){
+    
+    while (aux != NULL && item_comparar(aux->item, item, campo) < 0) {
         prior = aux;
         aux = aux->next;
     }
-    // Tratam tanto o caso de lista vazia quanto, inserir no fim e quando o item deve ser o primeiro da lista
-    if(aux == NULL){ 
+
+    // Insere no início
+    if (prior == NULL) {
+        new->next = l->begin;
+        l->begin = new;
+    } 
+
+    else {
+        prior->next = new;
+        new->next = aux;
+    }
+    
+    if (aux == NULL) {
         l->end = new;
     }
-    if(prior == NULL){
-        l->begin = new;
-    }
-    else prior->next = new;
-    new->next = aux;
+
     l->size++;
     return true;
 }
 
-/* ============================================================
-   INSERÇÃO
-   ============================================================ */
-
-bool lista_inserir_inicio(LISTA *lista, ITEM *item){
-    if(lista == NULL || item == NULL) return false;
-
-    if(lista->ordered == true) return lista_inserir_ordenada(lista, item);
-
-    NO *new = malloc(sizeof(NO));
-    if(new == NULL) return false;
-    new->item = item;
-
-    if(lista->begin == NULL) lista->end = new;
-
-    new->next = lista->begin;
-    lista->begin = new;
-    lista->size++;
-    return true;
-}
-
-bool lista_inserir_fim(LISTA *lista, ITEM *item){
-    if(lista == NULL || item == NULL) return false;
-
-    if(lista->ordered == true) return lista_inserir_ordenada(lista, item);
-
-    NO *new = malloc(sizeof(NO));
-    if(new == NULL) return false;
-    new->item = item;
-
-    if(lista->end == NULL) lista->begin = new;
-    else lista->end->next = new;
-
-    new->next = NULL;
-    lista->end = new;
-
-    lista->size++;
-    return true;
-}
-
-bool lista_inserir(LISTA *lista, ITEM *item, int posicao){
-    if(lista == NULL || item == NULL || posicao < 0 || posicao > lista->size) return false;
-
-    if(lista->ordered == true) return lista_inserir_ordenada(lista, item);
-
-    if(posicao == 0) return lista_inserir_inicio(lista, item);
-    if(posicao == lista->size) return lista_inserir_fim(lista, item);
-
-    NO *new = malloc(sizeof(NO));
-    if(new == NULL) return false;
-    new->item = item;
-
-    NO *aux = lista->begin, *prior = NULL; // Prior nunca será NULL, pois para ele ser, posição tem que ser igual a 0 e ela nunca será nessa parte do código!
-    for(int i = 0; i != posicao; i++){ // Posição nunca será igual a  0 ou ao tamanho da lista pois ele já teria caído nos if´s acima. 
-        prior = aux;
-        aux = aux->next;
-    }
-    
-    prior->next = new;
-    new->next = aux;
-
-    lista->size++;
-    return true;
-}
-
-
-/* ============================================================
-   REMOÇÃO
-   ============================================================ */
-
-ITEM *lista_remover_inicio(LISTA *lista){
+ITEM *lista_remover_inicio(LISTA_ORD *lista){
     if(lista == NULL || lista_vazia(lista)) return NULL;
 
     NO *remove = lista->begin;
@@ -153,7 +84,7 @@ ITEM *lista_remover_inicio(LISTA *lista){
     return item;
 }
 
-ITEM *lista_remover_fim(LISTA *lista){
+ITEM *lista_remover_fim(LISTA_ORD *lista){
     if(lista == NULL || lista_vazia(lista)) return NULL;
 
     NO *remove = lista->end;
@@ -177,7 +108,7 @@ ITEM *lista_remover_fim(LISTA *lista){
     return item;
 }
 
-ITEM *lista_remover(LISTA *lista, int posicao){
+ITEM *lista_remover(LISTA_ORD *lista, int posicao){
     if(lista == NULL || lista_vazia(lista) || posicao < 0 || posicao >= lista->size) return NULL;
 
     if(posicao == 0) return lista_remover_inicio(lista);
@@ -197,24 +128,32 @@ ITEM *lista_remover(LISTA *lista, int posicao){
     return item;
     }
 
+void lista_ord_apagar(LISTA_ORD **lista){
+    if(lista == NULL || *lista == NULL) return;
 
-/* ============================================================
-   ACESSO
-   ============================================================ */
+    ITEM *item;
+    while(!lista_vazia(*lista)){
+        item = lista_remover_inicio(*lista);
+        item_apagar(&item);
+    }
+    free(*lista);
+    *lista = NULL;
+    return;
+}
 
-ITEM *lista_primeiro(LISTA *lista){
+ITEM *lista_primeiro(LISTA_ORD *lista){
     if(lista == NULL || lista_vazia(lista)) return NULL;
 
     return lista->begin->item;
 }
 
-ITEM *lista_ultimo(LISTA *lista){
+ITEM *lista_ultimo(LISTA_ORD *lista){
     if(lista == NULL || lista_vazia(lista)) return NULL;
 
     return lista->end->item;
 }
 
-ITEM *lista_obter(LISTA *lista, int posicao){
+ITEM *lista_obter(LISTA_ORD *lista, int posicao){
     if(lista == NULL || lista_vazia(lista) || posicao < 0 || posicao >= lista->size) return NULL;
 
     if(posicao == 0) return lista_primeiro(lista);
@@ -228,53 +167,7 @@ ITEM *lista_obter(LISTA *lista, int posicao){
     return aux->item;
 }
 
-ITEM *lista_buscar(LISTA *lista, int chave){
-    if(lista == NULL || lista_vazia(lista)) return NULL;
-
-    NO *aux = lista->begin;
-    if(lista->ordered == true){
-        for(; aux != NULL && item_get_chave(aux->item) < chave;) aux = aux->next;
-    }
-    else for(; aux != NULL && item_get_chave(aux->item) != chave;) aux = aux->next;
-
-    if(aux == NULL || item_get_chave(aux->item) != chave) return NULL;
-    
-    return aux->item;
-}
-
-
-/* ============================================================
-   INFORMAÇÕES
-   ============================================================ */
-
-bool lista_vazia(LISTA *lista){
-    if(lista == NULL || lista->size == 0) return true;
-    return false;
-}
-
-int lista_tamanho(LISTA *lista){
-    if(lista == NULL) return -1;
-    return lista->size;
-}
-
-
-/* ============================================================
-   AUXILIAR
-   ============================================================ */
-
-void lista_imprimir(LISTA *lista){
-    if(lista == NULL || lista_vazia(lista)) return;
-
-    NO *aux = lista->begin;
-    printf("Inicio -> ");
-    while(aux != NULL){
-        printf("(%d) ", item_get_chave(aux->item));
-        aux = aux->next;
-    }
-    printf("<- Fim\n");
-}
-
-void lista_buscar(LISTA *l, void (*processar)(ITEM *item, void *), void *contexto){
+void lista_buscar(LISTA_ORD *l, void (*processar)(ITEM *item, void *), void *contexto){
     if (l == NULL || lista_vazia(l) || processar == NULL) {
         return;
     }

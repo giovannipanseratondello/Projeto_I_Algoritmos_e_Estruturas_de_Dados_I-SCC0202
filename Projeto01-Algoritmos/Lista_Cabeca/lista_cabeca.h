@@ -4,12 +4,14 @@
 #include <stdbool.h>
 #include "../Item/item.h"
 
-typedef struct lista LISTA;
+typedef struct lista LISTA_CABECA;
 
-LISTA *lista_criar(void);
-void lista_apagar(LISTA **lista);
+LISTA_CABECA *lista_cabeca_criar(void);
 
+void lista_cabeca_apagar(LISTA_CABECA **lista);
 
-bool lista_inserir_inicio(LISTA *lista, ITEM *item);
+bool lista_cabeca_inserir_inicio(LISTA_CABECA *lista, ITEM *item);
 
-#endif /* LISTA_CABECA_H */
+void lista_cabeca_buscar(LISTA_CABECA *l, void (*processar)(ITEM *item, void *), void *contexto);
+
+#endif 

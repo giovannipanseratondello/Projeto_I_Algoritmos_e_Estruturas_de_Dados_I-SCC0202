@@ -107,3 +107,18 @@ void fila_imprimir(FILA *f){
     }
     printf("<- Fim\n");
 }
+
+void fila_buscar(FILA *f, void (*processar)(ITEM *item, void *), void *contexto){
+    if (f == NULL || fila_vazia(f) || processar == NULL) {
+        return;
+    }
+
+    NO *aux = f->begin;
+    while (aux != NULL) {
+        
+        
+        processar(aux->item, contexto);
+        
+        aux = aux->next;
+    }
+}

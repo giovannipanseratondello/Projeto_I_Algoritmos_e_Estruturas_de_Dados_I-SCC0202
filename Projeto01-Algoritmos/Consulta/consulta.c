@@ -73,14 +73,6 @@ struct query {
    char cross_campo2[64];
 };
 
-// Funcao inserir generica
-typedef bool (* F_INSERIR)(void *estrutura, ITEM *i);
-
-typedef struct contexto{
-    QUERY *q;
-    void *resultado;
-    F_INSERIR inserir;
-} CONTEXTO_BUSCA;  
 
 QUERY *query_carregar(char *arquivo) {
     if (arquivo == NULL) return NULL;
@@ -284,19 +276,4 @@ bool query_avaliar_item(QUERY *q, ITEM *item) {
     item->calculated_similarity = score_final;
 
     return score_final >= q->accept;
-}
-
-// Verifica se o item esta "qualificado" para ser inserido na estrutura de dados de resultado
-void processar(ITEM *item, void *contexto){
-    
-    CONTEXTO_BUSCA *ctx = contexto;
-
-    if(item == NULL || ctx == NULL 
-    || ctx->resultado == NULL || ctx->q == NULL
-    || ctx->inserir == NULL) return; 
-
-    if(query_avaliar_item(ctx->q, item)){
-        // Aqui, o item que já passou por todos os filtros é inserido na estrutura de dados de destino
-        ctx->inserir(ctx->resultado, item);
-    }
 }

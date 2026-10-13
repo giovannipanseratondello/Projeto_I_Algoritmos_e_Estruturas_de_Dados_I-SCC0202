@@ -16,8 +16,19 @@ struct lista
     NO *end;
 };
 
-LISTA *lista_criar(void){
-   LISTA *l = malloc(sizeof(LISTA));
+
+bool lista_vazia(LISTA_ENC *lista){
+    if(lista == NULL || lista->size == 0) return true;
+    return false;
+}
+
+int lista_tamanho(LISTA_ENC *lista){
+    if(lista == NULL) return -1;
+    return lista->size;
+}
+
+LISTA_ENC *lista_enc_criar(void){
+   LISTA_ENC *l = malloc(sizeof(LISTA_ENC));
     if(l == NULL) return NULL;
 
     l->begin = NULL;
@@ -27,20 +38,8 @@ LISTA *lista_criar(void){
     return l;
 }
 
-void lista_apagar(LISTA **lista){
-   if(lista == NULL || *lista == NULL) return;
 
-    ITEM *item;
-    while(!lista_vazia(*lista)){
-        item = lista_remover_inicio(*lista);
-        item_apagar(&item);
-    }
-    free(*lista);
-    *lista = NULL;
-    return;
-}
-
-bool lista_inserir_inicio(LISTA *lista, ITEM *item){
+bool lista_enc_inserir_inicio(LISTA_ENC *lista, ITEM *item){
    if(lista == NULL || item == NULL) return false;
 
    NO *new = malloc(sizeof(NO));
@@ -58,54 +57,8 @@ bool lista_inserir_inicio(LISTA *lista, ITEM *item){
    return true;
 }
 
-bool lista_inserir_fim(LISTA *lista, ITEM *item){
-   if(lista == NULL || item == NULL) return false;
 
-   NO *new = malloc(sizeof(NO));
-   if(new == NULL) return false;
-   new->item = item;
-
-   if(lista->end == NULL) lista->begin = new;
-   else lista->end->next = new;
-
-   new->prior = lista->end;
-   new->next = NULL;
-   lista->end = new;
-
-   lista->size++;
-   return true;
-}
-
-bool lista_inserir(LISTA *lista, ITEM *item, int posicao){
-   if(lista == NULL || item == NULL || posicao < 0 || posicao > lista->size) return false;
-
-   if(posicao == 0) return lista_inserir_inicio(lista, item);
-   if(posicao == lista->size) return lista_inserir_fim(lista, item);
-
-   NO *new = malloc(sizeof(NO));
-   if(new == NULL) return false;
-   new->item = item;
-
-   NO *aux;
-   if(posicao >= lista->size / 2){
-      aux = lista->end;
-      for(int i = lista->size - 1; i != posicao; i--) aux = aux->prior;
-   }
-   else{
-      aux = lista->begin;
-      for(int i = 0; i != posicao; i++) aux = aux->next;
-   }
-
-   new->prior = aux->prior;
-   aux->prior->next = new;
-   aux->prior = new;
-   new->next = aux;
-   
-   lista->size++;
-   return true;
-}
-
-ITEM *lista_remover_inicio(LISTA *lista){
+ITEM *lista_remover_inicio(LISTA_ENC *lista){
    if(lista == NULL || lista_vazia(lista)) return NULL;
 
    NO *remove = lista->begin;
@@ -123,7 +76,7 @@ ITEM *lista_remover_inicio(LISTA *lista){
    return item;
 }
 
-ITEM *lista_remover_fim(LISTA *lista){
+ITEM *lista_remover_fim(LISTA_ENC *lista){
    if(lista == NULL || lista_vazia(lista)) return NULL;
 
    NO *remove = lista->end;
@@ -139,7 +92,7 @@ ITEM *lista_remover_fim(LISTA *lista){
    return item;
 }
 
-ITEM *lista_remover(LISTA *lista, int posicao){
+ITEM *lista_remover(LISTA_ENC *lista, int posicao){
    if(lista == NULL || lista_vazia(lista) || posicao < 0 || posicao >= lista->size) return NULL;
 
    if(posicao == 0) return lista_remover_inicio(lista);
@@ -165,17 +118,20 @@ ITEM *lista_remover(LISTA *lista, int posicao){
    return item;
 }
 
-bool lista_vazia(LISTA *lista){
-    if(lista == NULL || lista->size == 0) return true;
-    return false;
+void lista_enc_apagar(LISTA_ENC **lista){
+   if(lista == NULL || *lista == NULL) return;
+
+    ITEM *item;
+    while(!lista_vazia(*lista)){
+        item = lista_remover_inicio(*lista);
+        item_apagar(&item);
+    }
+    free(*lista);
+    *lista = NULL;
+    return;
 }
 
-int lista_tamanho(LISTA *lista){
-    if(lista == NULL) return -1;
-    return lista->size;
-}
-
-void lista_buscar(LISTA *l, void (*processar)(ITEM *item, void *), void *contexto){
+void lista_enc_buscar(LISTA_ENC *l, void (*processar)(ITEM *item, void *), void *contexto){
     if (l == NULL || lista_vazia(l) || processar == NULL) {
         return;
     }

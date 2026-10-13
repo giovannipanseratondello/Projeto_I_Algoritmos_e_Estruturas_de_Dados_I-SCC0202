@@ -203,29 +203,6 @@ ITEM* reader_ler_item(FILE *fp){
 
     return item;
 }
-
-
-// fp indica o arquivo csv base; base indica a funcao "criar" da estrutura de dados; inserir indica a funcao "inserir" da estrutura de dados; top_k indica o numero de registros lidos
-int ler_arquivo(FILE *fp, void *base, void (*inserir) (void *estrutura, ITEM *item), int top_k){
-    if ( fp == NULL || base == NULL || inserir == NULL ) return -1;
-
-    reader_pular_cabecalho(fp);
-    int registros_lidos = 0;
-
-    while(!feof(fp)){
-        if(top_k > 0 && registros_lidos >= top_k){ 
-            break;
-        }
-        
-        ITEM *item = reader_ler_item(fp);
-        if(item != NULL){
-            inserir(base, item);
-            registros_lidos++;
-        }
-    }
-
-    return registros_lidos;
-}
         
 
 
