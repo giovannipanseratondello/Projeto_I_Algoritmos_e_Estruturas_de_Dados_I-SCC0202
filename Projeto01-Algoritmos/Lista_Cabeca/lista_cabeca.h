@@ -12,6 +12,6 @@ void lista_cabeca_apagar(LISTA_CABECA **lista);
 
 bool lista_cabeca_inserir_inicio(LISTA_CABECA *lista, ITEM *item);
 
-void lista_cabeca_buscar(LISTA_CABECA *l, void (*processar)(ITEM *item, void *), void *contexto);
+void lista_cabeca_percorrer(LISTA_CABECA *l, void (*processar)(ITEM *item, void *contexto), void *contexto);
 
 #endif 

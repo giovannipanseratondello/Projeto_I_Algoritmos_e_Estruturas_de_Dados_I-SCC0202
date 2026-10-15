@@ -14,4 +14,6 @@ bool lista_cruz_inserir(LISTA_CRUZ *lc, ITEM *item, char *chave1, char *chave2);
 
 void lista_cruz_imprimir(LISTA_CRUZ *lc);
 
+void lista_cruz_percorrer(LISTA_CRUZ *l, void (*processar)(ITEM *item, void *contexto), void *contexto);
+
 #endif

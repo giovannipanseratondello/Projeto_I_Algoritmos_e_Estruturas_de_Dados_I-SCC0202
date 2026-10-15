@@ -1,45 +1,11 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <strings.h>
 #include <math.h>
 #include "consulta.h"
-#include "../Item/item.h"
-
-struct item{
-    // Identificação e texto
-    char designation[64];            // Designação oficial (ex: "2020 BX12")
-    char fullname[128];              // Nome completo
-    char close_approach_date[32];    // Data de aproximação formatada em texto
-
-    // Métricas e datas
-    int year;                        // Ano do evento
-    int month;                       // Mês do evento
-    double distance_au;              // Distância em Unidades Astronômicas
-    double velocity_km_s;            // Velocidade em km/s
-    double absolute_magnitude;       // Magnitude absoluta (H)
-    long days_until_approach;        // Contagem regressiva em dias
-
-    // Flags de tempo
-    bool is_past_event;              // Já passou?
-    bool is_future_event;            // Ainda vai acontecer?
-
-    // Avaliação de risco e pânico
-    double risk_score;               // Nota de risco calculada
-    int    panic_level;                 // Nível de alerta/pânico
-    char   threat_category[64];        // Categoria de ameaça (ex: "MONITOR", "CRITICAL")
-    char   panic_verdict[256];         // Descrição do veredito
-
-    // Dados opcionais do programa Sentry
-    bool   on_sentry_list;             // Está na lista de monitoramento?
-    double sentry_impact_prob;       // Probabilidade de impacto
-    double sentry_torino_scale;      // Escala Torino
-    double sentry_palermo_scale;     // Escala Palermo
-    double sentry_diameter_km;       // Diâmetro estimado (km)
-
-    // Campo auxiliar para as buscas
-    double calculated_similarity;    // Pontuação final calculada pelas consultas (Query)
-};
 
 struct filtro {
     char campo[64];
@@ -67,12 +33,12 @@ struct query {
    char order_campo[64];
    char order_tipo[8];
     
-   char group_campo[64];
+   char group_campo1[64];
+   char group_campo2[64];
    
    char cross_campo1[64];
    char cross_campo2[64];
 };
-
 
 QUERY *query_carregar(char *arquivo) {
     if (arquivo == NULL) return NULL;
@@ -165,10 +131,16 @@ QUERY *query_carregar(char *arquivo) {
             }
 
         } else if (strcmp(comando, "GROUP") == 0) {
-            char *campo = strtok(NULL, "|");
-            if (campo) {
-                strncpy(q->group_campo, campo, sizeof(q->group_campo) - 1);
-                q->group_campo[sizeof(q->group_campo) - 1] = '\0';
+            char *g1 = strtok(NULL, "|");
+            char *g2 = strtok(NULL, "|");
+
+            if (g1) {
+                strncpy(q->group_campo1, g1, sizeof(q->group_campo1) - 1);
+                q->group_campo1[sizeof(q->group_campo1) - 1] = '\0';
+            }
+            if (g2) {
+                strncpy(q->group_campo2, g2, sizeof(q->group_campo2) - 1);
+                q->group_campo2[sizeof(q->group_campo2) - 1] = '\0';
             }
 
         } else if (strcmp(comando, "CROSS") == 0) {
@@ -209,24 +181,64 @@ void query_destruir(QUERY **q) {
     *q = NULL;
 }
 
+// Mapeamento completo de campos numéricos
 double obter_valor_numerico_item(ITEM *item, const char *campo) {
-    if (strcmp(campo, "year") == 0) return (double) item->year;
-    if (strcmp(campo, "month") == 0) return (double) item->month;
-    if (strcmp(campo, "distance_au") == 0) return item->distance_au;
-    if (strcmp(campo, "velocity_km_s") == 0) return item->velocity_km_s;
-    if (strcmp(campo, "absolute_magnitude") == 0) return item->absolute_magnitude;
-    if (strcmp(campo, "days_until_approach") == 0) return (double) item->days_until_approach;
-    if (strcmp(campo, "risk_score") == 0) return item->risk_score;
-    if (strcmp(campo, "panic_level") == 0) return (double) item->panic_level;
+    if (strcmp(campo, "year") == 0) return (double) item_get_year(item);
+    if (strcmp(campo, "month") == 0) return (double) item_get_month(item);
+    if (strcmp(campo, "distance_au") == 0) return item_get_distance_au(item);
+    if (strcmp(campo, "velocity_km_s") == 0) return item_get_velocity_km_s(item);
+    if (strcmp(campo, "absolute_magnitude") == 0) return item_get_absolute_magnitude(item);
+    if (strcmp(campo, "days_until_approach") == 0) return (double) item_get_days_until_approach(item);
+    if (strcmp(campo, "risk_score") == 0) return item_get_risk_score(item);
+    if (strcmp(campo, "panic_level") == 0) return (double) item_get_panic_level(item);
+    if (strcmp(campo, "sentry_impact_prob") == 0) return item_get_sentry_impact_prob(item);
+    if (strcmp(campo, "sentry_torino_scale") == 0) return item_get_sentry_torino_scale(item);
+    if (strcmp(campo, "sentry_palermo_scale") == 0) return item_get_sentry_palermo_scale(item);
+    if (strcmp(campo, "sentry_diameter_km") == 0) return item_get_sentry_diameter_km(item);
     return 0.0;
 }
 
+// Mapeamento de campos textuais
+const char* obter_valor_texto_item(ITEM *item, const char *campo) {
+    if (strcmp(campo, "asteroid_designation") == 0) return item_get_designation(item);
+    if (strcmp(campo, "asteroid_fullname") == 0) return item_get_fullname(item);
+    if (strcmp(campo, "close_approach_date") == 0) return item_get_close_approach_date(item);
+    if (strcmp(campo, "threat_category") == 0) return item_get_threat_category(item);
+    if (strcmp(campo, "panic_verdict") == 0) return item_get_panic_verdict(item);
+    return NULL;
+}
+
+// Mapeamento de campos booleanos
+bool obter_valor_booleano_item(ITEM *item, const char *campo) {
+    if (strcmp(campo, "is_past_event") == 0) return item_get_is_past_event(item);
+    if (strcmp(campo, "is_future_event") == 0) return item_get_is_future_event(item);
+    if (strcmp(campo, "on_sentry_list") == 0) return item_get_on_sentry_list(item);
+    return false;
+}
+
 bool testar_filtro(FILTRO *f, ITEM *item) {
-    if (strcmp(f->campo, "threat_category") == 0) {
-        if (strcmp(f->operador, "==") == 0) return strcmp(item->threat_category, f->valor_str) == 0;
-        if (strcmp(f->operador, "!=") == 0) return strcmp(item->threat_category, f->valor_str) != 0;
+    // 1. Tratamento para campos de Texto (String)
+    const char *txt_val = obter_valor_texto_item(item, f->campo);
+    if (txt_val != NULL) {
+        if (strcmp(f->operador, "==") == 0) return strcmp(txt_val, f->valor_str) == 0;
+        if (strcmp(f->operador, "!=") == 0) return strcmp(txt_val, f->valor_str) != 0;
+        return true;
     }
 
+    // 2. Tratamento para campos Booleanos
+    if (strcmp(f->campo, "is_past_event") == 0 || 
+        strcmp(f->campo, "is_future_event") == 0 || 
+        strcmp(f->campo, "on_sentry_list") == 0) {
+        
+        bool val_bool = obter_valor_booleano_item(item, f->campo);
+        bool alvo_bool = (strcasecmp(f->valor_str, "true") == 0 || strcmp(f->valor_str, "1") == 0);
+
+        if (strcmp(f->operador, "==") == 0) return val_bool == alvo_bool;
+        if (strcmp(f->operador, "!=") == 0) return val_bool != alvo_bool;
+        return true;
+    }
+
+    // 3. Tratamento para campos Numéricos
     double val_item = obter_valor_numerico_item(item, f->campo);
     if (strcmp(f->operador, "==") == 0) return val_item == f->valor_num;
     if (strcmp(f->operador, "!=") == 0) return val_item != f->valor_num;
@@ -250,7 +262,7 @@ bool query_avaliar_item(QUERY *q, ITEM *item) {
 
     // 2. Se não houver regras SIM, aprova
     if (q->qtd_sim == 0) {
-        item->calculated_similarity = 1.0;
+        item_set_calculated_similarity(item, 1.0);
         return true;
     }
 
@@ -273,7 +285,32 @@ bool query_avaliar_item(QUERY *q, ITEM *item) {
     }
 
     double score_final = (soma_pesos > 0) ? (soma_score / soma_pesos) : 0.0;
-    item->calculated_similarity = score_final;
+    item_set_calculated_similarity(item, score_final);
 
     return score_final >= q->accept;
+}
+
+char* query_obter_order_campo(QUERY *q) {
+    if (q == NULL) return "";
+    return q->order_campo;
+}
+
+char* query_obter_group_campo1(QUERY *q) {
+    if (q == NULL) return "";
+    return q->group_campo1;
+}
+
+char* query_obter_group_campo2(QUERY *q) {
+    if (q == NULL) return "";
+    return q->group_campo2;
+}
+
+char* query_obter_cross_campo1(QUERY *q) {
+    if (q == NULL) return "";
+    return q->cross_campo1;
+}
+
+char* query_obter_cross_campo2(QUERY *q) {
+    if (q == NULL) return "";
+    return q->cross_campo2;
 }

@@ -1,0 +1,9 @@
+FILTER|threat_category|==|MONITOR
+FILTER|on_sentry_list|==|true
+FILTER|absolute_magnitude|<|24.0
+SIM|velocity_km_s|20.0|15.0|1.5
+SIM|distance_au|0.1|0.08|2.0
+ACCEPT|0.40
+ORDER|risk_score|DESC
+GROUP|threat_category|panic_level
+CROSS|threat_category|panic_level

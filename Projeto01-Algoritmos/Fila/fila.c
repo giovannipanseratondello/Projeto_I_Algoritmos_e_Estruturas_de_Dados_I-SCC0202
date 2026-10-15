@@ -94,31 +94,11 @@ int fila_tamanho(FILA *f){
     return f->size;
 }
 
-/* Auxiliar */
-void fila_imprimir(FILA *f){
-    if(f == NULL || fila_vazia(f)) return;
-
-    NO *aux = f->begin;
-
-    printf("Inicio -> ");
-    while(aux != NULL){
-        printf("(%d) ",item_get_chave(aux->item));
-        aux = aux->next;
-    }
-    printf("<- Fim\n");
-}
-
-void fila_buscar(FILA *f, void (*processar)(ITEM *item, void *), void *contexto){
-    if (f == NULL || fila_vazia(f) || processar == NULL) {
-        return;
-    }
-
-    NO *aux = f->begin;
+void fila_percorrer(FILA *f, void (*processar)(ITEM *item, void *contexto), void *contexto) {
+    if (f == NULL || processar == NULL) return;
+    NO *aux = f->begin; // ajuste para o nome do campo inicial da fila
     while (aux != NULL) {
-        
-        
         processar(aux->item, contexto);
-        
         aux = aux->next;
     }
 }

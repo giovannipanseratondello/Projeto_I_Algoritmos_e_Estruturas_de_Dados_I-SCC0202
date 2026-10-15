@@ -6,16 +6,16 @@
 
 typedef struct lista_gen LISTA_GEN;
 
+// Cria a lista generalizada vazia
 LISTA_GEN *lista_gen_criar(void);
 
-void lista_gen_apagar(LISTA_GEN **l);
+// Destrói a lista generalizada e libera os nós de agrupamento (sem destruir os itens em si, se gerenciados externamente)
+void lista_gen_destruir(LISTA_GEN **l);
 
-bool lista_gen_inserir_item(LISTA_GEN *l, ITEM *item);
+// Insere um item de forma hierárquica usando duas chaves de texto genéricas (grupo e subgrupo)
+bool lista_gen_inserir(LISTA_GEN *l, void *item, const char *chave_grupo, const char *chave_subgrupo);
 
-bool lista_gen_inserir_sublista(LISTA_GEN *l, LISTA_GEN *sublista);
-
-bool lista_gen_vazia(LISTA_GEN *l);
-
-void lista_gen_imprimir(LISTA_GEN *l);
+// Permite percorrer todos os itens armazenados na estrutura passando um callback genérico
+void lista_gen_percorrer(LISTA_GEN *l, void (*processar)(ITEM *item, void *contexto), void *contexto);
 
 #endif

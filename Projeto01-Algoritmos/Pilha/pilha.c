@@ -80,21 +80,11 @@ void pilha_apagar(PILHA **p){
     *p = NULL;
 }
 
-void pilha_buscar(PILHA *p, void (*processar)(ITEM *item, void *), void *contexto) {
-    if (p == NULL || pilha_vazia(p) || processar == NULL) {
-        return;
-    }
-
-    NO *aux = p->top;
+void pilha_percorrer(PILHA *p, void (*processar)(ITEM *item, void *contexto), void *contexto) {
+    if (p == NULL || processar == NULL) return;
+    NO *aux = p->top; // ajuste para o nome do campo do seu nó topo
     while (aux != NULL) {
-        /*
-        Retorna (-1) caso for menor que o item de referência
-        Retorna (0) caso forem iguais
-        */
-        // Dispara a função callback enviando o item atual e o resultado da comparação (-1, 0, ou 1)
         processar(aux->item, contexto);
-        
         aux = aux->prior;
-        
     }
 }

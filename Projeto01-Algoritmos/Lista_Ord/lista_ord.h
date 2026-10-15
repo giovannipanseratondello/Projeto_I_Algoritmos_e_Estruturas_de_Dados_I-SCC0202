@@ -12,6 +12,6 @@ void lista_ord_apagar(LISTA_ORD **lista);
 
 bool lista_ord_inserir(LISTA_ORD *l, ITEM *item, char *campo);
 
-void lista_ord_buscar(LISTA_ORD *l, void (*processar)(ITEM *item, void *), void *contexto);
+void lista_ord_percorrer(LISTA_ORD *l, void (*processar)(ITEM *item, void *contexto), void *contexto);
 
 #endif

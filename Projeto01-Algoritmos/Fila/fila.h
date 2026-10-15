@@ -22,6 +22,6 @@ int fila_tamanho(FILA *f);
 /* Auxiliar */
 void fila_imprimir(FILA *f);
 
-void fila_buscar(FILA *f, void (*processar)(ITEM *item, void *), void *contexto)
+void fila_percorrer(FILA *f, void (*processar)(ITEM *item, void *contexto), void *contexto);
 
 #endif

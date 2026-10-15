@@ -13,6 +13,6 @@ void lista_seq_apagar(LISTA_SEQ **lista);
 
 bool lista_seq_inserir_inicio(LISTA_SEQ *lista, ITEM *item);
 
-void lista_seq_buscar(LISTA_SEQ *l, void (*processar)(ITEM *item, void *), void *contexto);
+void lista_seq_percorrer(LISTA_SEQ *l, void (*processar)(ITEM *item, void *contexto), void *contexto);
 
 #endif

@@ -13,6 +13,6 @@ void lista_enc_apagar(LISTA_ENC **lista);
 
 bool lista_enc_inserir_inicio(LISTA_ENC *lista, ITEM *item);
 
-void lista_enc_buscar(LISTA_ENC *l, void (*processar)(ITEM *item, void *), void *contexto);
+void lista_enc_percorrer(LISTA_ENC *l, void (*processar)(ITEM *item, void *contexto), void *contexto);
 
 #endif
