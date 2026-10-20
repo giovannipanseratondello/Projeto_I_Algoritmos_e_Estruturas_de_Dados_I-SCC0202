@@ -1,1 +1,0 @@
-ITEM* reader_ler_item(FILE *fp);
